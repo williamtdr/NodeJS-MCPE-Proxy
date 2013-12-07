@@ -1,0 +1,49 @@
+<% include bodyheader.ejs %>
+<script src="/static/js/lib/jquery-1.7.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    function isNumber(n)
+    {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+    var socket = io.connect('http://' + window.location.hostname);
+    socket.on('connect', function () {
+        $('#config :input').attr('disabled', false);
+        $('#connection-status').text('Connected');
+        $('#reconnect').hide()
+        $("#config").submit(function(event) {
+            event.preventDefault();
+            if (!isNumber($('#serverPort').val()))
+            {
+                $('#form-error').text('Port used for server port is not a number');
+                return false;
+
+            }
+            if (!isNumber($('#proxyPort').val()))
+            {
+                $('#form-error').text('Port used for proxy port is not a number');
+                return false;
+            }
+            socket.emit('config', $("#config").serialize());
+            $('#form-error').text("");
+        });
+    });
+
+    socket.on('disconnect', function() {
+        $('#config :input').attr('disabled', true);
+        $('#connection-status').text('Disconnected');
+        $('#reconnect').show();
+    });
+
+</script>
+<form id="config">
+    <div id='form-error'></div>
+    Server ip: <input type='text' name='serverip' id='serverip' disabled='true' value="<%= nconf.get('serverip') %>" /><br/>
+    Server port: <input type='text' name='serverPort' id='serverPort' disabled='true' value="<%= nconf.get('serverPort') %>" /><br/>
+    Proxy port: <input type='text' name='proxyPort' id='proxyPort' disabled='true' value="<%= nconf.get('proxyPort') %>" /><br/>
+    <input type="submit" disabled='true' value="submit" /><br/>
+</form>
+<div>
+Connection status: <div id='connection-status'>Disconnected</div>
+</div>
+<a href='javascript:void()' onclick='socket.socket.connect()' id='reconnect' style='display:block'>Reconnect</a>

@@ -1,0 +1,168 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>Packets</title>
+  <link rel="stylesheet" href="/static/css/slick.grid.css" type="text/css"/>
+  <link rel="stylesheet" href="/static/css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css"/>
+  <link rel="stylesheet" href="/static/css/examples.css" type="text/css"/>
+  <link rel="stylesheet" href="/static/css/controls/slick.columnpicker.css" type="text/css"/>
+</head>
+<body>
+<% include bodyheader.ejs %>
+<div id="config">
+<div>Autoscrolling: <a href='#' id='autoscroll-status' >Disabled</a></div>
+<div><a href='#' id='database-clear' >Clear all packets</a></div>
+<div style="position:relative">
+    <div id="myGrid" style="width:100%;height:500px;"></div>
+</div>
+</div>
+<div id="packetInfo" style="height: 100%; overflow: scroll;"></div>
+
+<script src="/static/js/lib/jquery-1.7.min.js"></script>
+<script src="/static/js/lib/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="/static/js/lib/jquery.event.drag-2.0.min.js"></script>
+
+<script src="/static/js/slick.core.js"></script>
+<script src="/static/js/slick.formatters.js"></script>
+<script src="/static/js/plugins/slick.rowselectionmodel.js"></script>
+<script src="/static/js/slick.grid.js"></script>
+<script src="/static/js/slick.dataview.js"></script>
+<script src="/static/js/controls/slick.columnpicker.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+var dataView;
+var grid;
+var data = [];
+var autoscroll = false;
+    columns = [
+        {
+            id: "time",
+            name: "Time",
+            field: "time"
+        },
+        {
+            id: "srcip",
+            name: "Source",
+            field: "srcip"
+        },
+        {
+            id: "destip",
+            name: "Destination",
+            field: "destip"
+        },
+        {
+            id: "length",
+            name: "Length",
+            field: "length",
+            width: 45
+        },
+        {
+            id: "info",
+            name: "Info",
+            field: "info",
+            width: 400
+        }
+    ];
+  var options = {
+    enableAddRow: true,
+    enableCellNavigation: true,
+    forceFitColumns: true
+  };
+
+  $(function () {
+    grid = new Slick.Grid("#myGrid", data, columns, options);
+    grid.setSelectionModel(new Slick.RowSelectionModel());
+    $('#myGrid').resizable();
+  })
+
+    function getPacketData()
+    {
+        socket.emit('getPacketData', data[grid.getSelectedRows()].realTime);
+    }
+
+    var socket = io.connect('http://' + window.location.hostname);
+    socket.on('connect', function () {
+        console.log('Connected');
+        grid.onSelectedRowsChanged.subscribe(getPacketData);
+
+        $('#database-clear').click(function(e)
+        {
+            socket.emit('databaseClear');
+            data = [];
+            grid.invalidate();
+            grid.setData(data);
+        });
+    });
+
+    socket.on('disconnect', function()
+    {
+        grid.onSelectedRowsChanged.unsubscribe(getPacketData);
+    });
+
+    /*socket.on('log', function (data)
+    {
+        document.body.innerHTML += data + "<br>";
+    });*/
+
+    socket.on('packetData', function (data)
+    {
+        json = JSON.parse(data);
+        console.dir(json)
+        function json2html(data, level, indent) {
+            if (typeof(data) == 'object') {
+                var div = $('<div>');
+                for (var i in data) {
+                    div.append($('<div>').text(i).
+                        append(json2html(data[i], level + 1, indent)).css('padding-left', (indent * level) + "px"));
+                }
+                return div;
+            } else {
+                var textNode = document.createTextNode(': ' + data);
+                return textNode;
+            }
+        }
+
+        $("#packetInfo").html(json2html(json, 0, 10));
+
+    });
+
+    socket.on('packetReceive', function (json)
+    {
+        grid.invalidateRow(data.length);
+        data.push(JSON.parse(json));
+    });
+
+    function triggerAutoscroll()
+    {
+        if (autoscroll)
+        {
+            autoscroll = false;
+            $('#autoscroll-status').text("Disabled (click to enable)");
+        }
+        else
+        {
+            autoscroll = true;
+            $('#autoscroll-status').text("Enabled (click to disable)");
+        }
+    }
+
+    $('#autoscroll-status').click(function(e)
+    {
+        e.preventDefault();
+        triggerAutoscroll();
+    });
+
+    setInterval(function ()
+        {
+            grid.updateRowCount();
+            grid.render();
+            if (autoscroll)
+            {
+                grid.scrollRowIntoView(data.length + 1)
+            }
+        }, 10);
+</script>
+</body>
+</html>

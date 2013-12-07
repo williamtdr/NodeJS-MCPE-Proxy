@@ -1,0 +1,39 @@
+{
+  "name": "minecraft-pe-proxy",
+  "version": "0.0.1",
+  "description": "Proxy for Minecraft Pocket Edition to connect to internet servers without app modification",
+  "homepage": "https://github.com/brandon15811/Minecraft-PE-Proxy",
+  "main": "mcpeproxy",
+  "scripts": {
+    "test": "exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/brandon15811/Minecraft-PE-Proxy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/brandon15811/Minecraft-PE-Proxy/issues"
+  },
+  "keywords": [
+    "minecraft",
+    "udp"
+  ],
+  "author": "brandon15811",
+  "license": "GPL",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "nconf": "0.6.x",
+    "ejs": "0.8.x",
+    "node-static": "0.6.x",
+    "validator": "0.4.x",
+    "mysql": "~2.0.0-alpha8",
+    "director": "1.2.x",
+    "request": "2.26.x",
+    "formidable": "~1.0.14"
+  },
+  "engine": "node 0.8.x",
+  "devDependencies": {
+    "sqlite3": "2.1.x",
+    "socket.io": "0.9.x"
+  }
+}
